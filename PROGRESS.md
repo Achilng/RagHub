@@ -13,7 +13,7 @@
 - **项目名**:RagHub
 - **性质**:学习项目,目标是完整体验 Spring Boot + Spring AI 的企业级开发流程
 - **最终形态**:RAG-as-a-Service 平台(文档上传 → 解析 → 分块 → Embedding → 向量入库 → REST 检索 API)
-- **当前阶段**:阶段 1(最小 RAG 闭环)
+- **当前阶段**:阶段 1 已完成 ✓,下一步进入阶段 2(REST API 完整化 + 文档管理)
 - **路径**:`D:\java\project\RagHub`
 
 ---
@@ -67,13 +67,13 @@
 - [x] **#4** 编写 `application.yaml`:datasource / JPA(ddl-auto=validate, open-in-view=false)/ flyway / dashscope / deepseek
 - [x] **#5** 编写 Flyway `V1__init_schema.sql`:`documents` / `document_chunks` 两张表
 - [x] **#5.1** 首次启动验证:Flyway 成功执行 V1,三张表(documents / document_chunks / flyway_schema_history)已建立
-- [ ] **#6** 编写 JPA 实体类 `Document` / `DocumentChunk`(**← 当前步骤**)
-- [ ] **#7** 编写 Repository 接口(`DocumentRepository` / `DocumentChunkRepository`)
-- [ ] **#8** 编写 `VectorStoreConfig`:注册 `SimpleVectorStore` Bean,启动时从 MySQL 重建索引
-- [ ] **#9** 编写 `DocumentService`:上传 → 解析 → 分块 → 向量化 → 入库
-- [ ] **#10** 编写 `RetrievalService`:query → 向量化 → 相似度检索 → 返回结果
-- [ ] **#11** 编写 `DocumentController`:`POST /api/documents`、`POST /api/search`
-- [ ] **#12** 端到端验证:上传 txt 文件 → 发起 query → 拿到 Top-K 相关分块
+- [x] **#6** 编写 JPA 实体类 `Document` / `DocumentChunk` / `DocumentStatus`
+- [x] **#7** 编写 Repository 接口(`DocumentRepository` / `DocumentChunkRepository`),并通过集成测试验证
+- [x] **#8** 编写 `VectorStoreConfig`:注册 `SimpleVectorStore` Bean,启动时从 MySQL 重建索引
+- [x] **#9** 编写 `DocumentService`:上传 → Tika 解析 → 分块 → DashScope embedding → MySQL 持久化 → VectorStore 写入
+- [x] **#10** 编写 `RetrievalService`:query → VectorStore 相似度检索 → 返回 Top-K
+- [x] **#11** 编写 `DocumentController`:`POST /api/documents`、`POST /api/search` + `SearchRequest` DTO
+- [x] **#12** 端到端验证:上传 txt 文件 → 发起 query → 拿到 Top-K 相关分块 ✓
 
 ### 阶段 2/3/4
 见 `PLAN.md`,尚未开始。
@@ -89,10 +89,26 @@ D:\java\project\RagHub\
 ├── CLAUDE.md                                            项目协作规则
 ├── pom.xml                                              Maven 依赖配置
 ├── .mvn/wrapper/maven-wrapper.properties                (已不再使用)
-└── src/main/
-    ├── java/com/hanae/raghub/
-    │   └── RagHubApplication.java                       启动类(脚手架生成)
-    └── resources/
+└── src/
+    ├── main/java/com/hanae/raghub/
+    │   ├── RagHubApplication.java                       启动类(脚手架生成)
+    │   ├── entity/
+    │   │   ├── Document.java                            文档实体
+    │   │   ├── DocumentChunk.java                       分块实体
+    │   │   └── DocumentStatus.java                      文档状态枚举
+    │   ├── repository/
+    │   │   ├── DocumentRepository.java                  文档 Repository
+    │   │   └── DocumentChunkRepository.java             分块 Repository
+    │   ├── config/
+    │   │   └── VectorStoreConfig.java                   向量库配置(SimpleVectorStore + 启动重建)
+    │   ├── service/
+    │   │   ├── DocumentService.java                     文档上传全链路(解析/分块/embedding/入库)
+    │   │   └── RetrievalService.java                    向量相似度检索服务
+    │   ├── dto/
+    │   │   └── SearchRequest.java                       检索请求 DTO
+    │   └── controller/
+    │       └── DocumentController.java                  REST 接口(上传 + 检索)
+    ├── main/resources/
         ├── application.yaml                             应用配置
         └── db/migration/
             └── V1__init_schema.sql                      Flyway V1(建表)
@@ -143,7 +159,7 @@ D:\java\project\RagHub\
 
 ## 最近一次更新
 
-**日期**:2026-04-07
-**完成**:#5.1(首次启动验证成功,Flyway 已建表)
-**下一步**:#6 编写 JPA 实体类 `Document` / `DocumentChunk`
+**日期**:2026-04-14
+**完成**:阶段 1 全部完成(#0 ~ #12),最小 RAG 闭环跑通
+**下一步**:进入阶段 2 — REST API 完整化 + 文档管理 + Redis 向量库
 **负责人**:用户 + Claude

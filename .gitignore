@@ -3,6 +3,14 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+### 测试类 ###
+test/
+
+### AI工具 ###
+AGENTS.md
+CLAUDE.md
+.claude/
+
 ### STS ###
 .apt_generated
 .classpath
