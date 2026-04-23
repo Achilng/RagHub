@@ -84,6 +84,12 @@
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-tika-document-reader</artifactId>
         </dependency>
+
+        <!-- Spring AI: Redis 向量库 (阶段 2, 通过 profile 切换) -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-vector-store-redis</artifactId>
+        </dependency>
         
 
         <!-- API 文档: Swagger UI -->

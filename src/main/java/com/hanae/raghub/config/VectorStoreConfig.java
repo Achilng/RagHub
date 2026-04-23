@@ -11,9 +11,12 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @Configuration
@@ -22,11 +25,13 @@ public class VectorStoreConfig {
     private static final Logger log = LoggerFactory.getLogger(VectorStoreConfig.class);
 
     @Bean
+    @Profile("simple")
     public VectorStore vectorStore(EmbeddingModel embeddingModel) {
         return SimpleVectorStore.builder(embeddingModel).build();
     }
 
     @Bean
+    @Profile("simple")
     public CommandLineRunner rebuildVectorIndex(VectorStore vectorStore,
                                                DocumentChunkRepository chunkRepository) {
         return args -> {
@@ -60,6 +65,43 @@ public class VectorStoreConfig {
             } else {
                 log.info("没有包含 embedding 的分块，跳过重建");
             }
+        };
+    }
+
+    @Bean
+    @Profile("redis")
+    public CommandLineRunner rebuildRedisIndex(VectorStore vectorStore,
+                                               DocumentChunkRepository chunkRepository,
+                                               StringRedisTemplate redisTemplate){
+        return args -> {
+            long count = chunkRepository.count();
+            if (count==0){
+                return;
+            }
+
+            Set<String> keys = redisTemplate.keys("raghub:*");
+            if (keys != null && !keys.isEmpty()){
+                return;
+            }
+
+            // 重建环节
+            List<DocumentChunk> documentChunks = chunkRepository.findAll();
+
+            // 这里要转为通用的Document
+            List<Document> documents = documentChunks
+                    .stream()
+                    .map(chunk -> new Document(
+                            chunk.getVectorId() != null ? chunk.getVectorId() : UUID.randomUUID().toString(),
+                            chunk.getContent(),
+                            Map.of(
+                                    "documentId",chunk.getDocumentId(),
+                                    "chunkIndex",chunk.getChunkIndex()
+                            )
+                    ))
+                    .toList();
+
+
+            vectorStore.add(documents);
         };
     }
 }

@@ -1,6 +1,14 @@
 spring:
+  profiles:
+    active: redis
+
   application:
     name: RagHub
+
+  data:
+    redis:
+      host: localhost
+      port: 6390
 
   datasource:
     url: jdbc:mysql://localhost:3306/raghub?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
@@ -32,6 +40,12 @@ spring:
 
     deepseek:
       api-key: ${DEEPSEEK_API_KEY}
+
+    vectorstore:
+      redis:
+        index: raghub-vectors
+        prefix: "raghub:"
+        initialize-schema: true
 
 server:
   port: 8080
