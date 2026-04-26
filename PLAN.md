@@ -22,8 +22,11 @@
 | 向量入库 | 是 | 阶段 1 |
 | 相似度检索 RESTful API | 是 | 阶段 1-2 |
 | 文档管理 CRUD（列表 / 删除） | 是 | 阶段 2 |
-| DeepSeek 联动的 RAG 演示接口 | 可选 | 阶段 2 后 |
-| Swagger / OpenAPI 文档 | 是 | 阶段 4 |
+| DeepSeek 联动的 RAG 演示接口 | 是 | 阶段 2（已完成） |
+| 前端 — 注册 / 登录页面 | 是 | 阶段 3 |
+| 前端 — 文档管理界面 | 是 | 阶段 4 |
+| 前端 — 检索 + RAG 问答界面 | 是 | 阶段 4 |
+| Swagger / OpenAPI 文档 | 是 | 阶段 5 |
 | 多租户 / 文档权限隔离 | 是 | 阶段 3 |
 | 异步任务 / 大文件处理 | 不在 MVP | 后续 |
 | 监控 / 链路追踪 | 不在 MVP | 后续 |
@@ -46,7 +49,11 @@
 | Web 层 | Spring MVC（`spring-boot-starter-web`） | 标准 REST |
 | 文档解析 | Spring AI Tika Document Reader | 支持 txt/pdf/docx 等 |
 | 安全 | Spring Security + JWT | 阶段 3 引入 |
-| API 文档 | springdoc-openapi（Swagger UI） | 阶段 4 引入 |
+| 前端框架 | Vue 3 + TypeScript | 阶段 3 引入 |
+| 前端构建 | Vite | - |
+| 前端路由 | Vue Router | - |
+| HTTP 客户端 | Axios | - |
+| API 文档 | springdoc-openapi（Swagger UI） | 阶段 5 引入 |
 | 配置管理 | application.yaml + 环境变量 | 敏感信息绝不入库 |
 
 > 注：Spring AI Alibaba 的具体 artifact 名称将在阶段 1 添加依赖时再次核对官方文档，避免版本错配。
@@ -201,24 +208,50 @@ document_chunks
 
 ---
 
-### 阶段 3：用户系统 + 安全
+### 阶段 3：用户系统 + 安全 + 登录前端
 
-**目标**：引入用户体系，实现登录、JWT 鉴权、文档归属隔离。
+**目标**：引入用户体系，实现登录、JWT 鉴权、文档归属隔离；搭建前端项目，完成注册登录页面。采用"按功能纵切"的全栈开发方式——后端做完一个功能，立刻做对应的前端页面。
 
-**任务清单**：
-1. 用户注册 / 登录接口
-2. 引入 Spring Security
-3. 引入 JWT（jjwt）
-4. 写 `JwtAuthenticationFilter`、`SecurityConfig`
-5. 文档表加 `user_id` 非空约束
-6. 所有文档 / 检索接口做权限校验：用户只能操作自己的文档
+**后端任务**：
+1. Flyway 迁移：创建 `users` 表
+2. 用户实体 `User` + `UserRepository`
+3. 用户注册接口 `POST /api/auth/register`
+4. 用户登录接口 `POST /api/auth/login`
+5. 引入 Spring Security + JWT（jjwt）
+6. 编写 `JwtAuthenticationFilter`、`SecurityConfig`
 7. 密码使用 BCrypt 存储
+8. 文档表加 `user_id` 非空约束（Flyway 迁移）
+9. 所有文档 / 检索接口做权限校验：用户只能操作自己的文档
+10. 配置 CORS（允许前端开发服务器跨域访问）
 
-**完成标志**：未登录无法访问任何文档接口；用户 A 无法看到 / 检索用户 B 的文档。
+**前端任务**：
+11. 初始化前端项目（`frontend/` 目录，Vue 3 + TypeScript + Vite）
+12. 搭建项目结构：路由（Vue Router）、HTTP 客户端（Axios）
+13. Axios 请求拦截器：自动携带 `Authorization: Bearer <token>` 头
+14. 注册页面
+15. 登录页面 + JWT Token 本地存储
+16. 路由守卫：未登录自动跳转登录页
+
+**完成标志**：能在浏览器注册账号、登录、拿到 Token；未登录访问受保护页面被跳转到登录页；后端接口未携带有效 Token 返回 401。
 
 ---
 
-### 阶段 4：工程化
+### 阶段 4：文档管理 + RAG 前端
+
+**目标**：完成文档上传、管理、检索、RAG 问答的完整前端界面。此阶段结束后，用户可以通过浏览器完成所有操作。
+
+**任务清单**：
+1. 整体布局：侧边栏导航 + 顶栏用户信息 / 退出登录
+2. 文档上传页面（支持文件选择 + 上传状态展示）
+3. 文档列表页面（展示状态、分块数、支持删除）
+4. 检索页面（输入查询 → 展示 Top-K 结果）
+5. RAG 问答页面（对话式界面，展示回答 + 引用来源）
+
+**完成标志**：用户能在浏览器完成完整流程——注册 → 登录 → 上传文档 → 等待处理完成 → 检索 → RAG 问答 → 看到生成的回答和引用来源。
+
+---
+
+### 阶段 5：工程化
 
 **目标**：让项目具备"可演示、可维护"的工程素质。
 
@@ -262,6 +295,7 @@ document_chunks
 | DashScope API Key | 阿里云百炼控制台开通，免费额度足够学习 | 阶段 1 必需 |
 | MySQL 8.x | 本机或 docker 均可，需要 root 密码或专用账号 | 阶段 1 必需 |
 | Redis Stack 或 Redis 8+ | 必须支持向量搜索，普通 Redis 5/6/7 不行 | 阶段 2 必需 |
+| Node.js 18+ | 前端构建需要 | 阶段 3 必需 |
 | JDK 17 | 已具备 | 已具备 |
 | Maven | 项目自带 mvnw，无需单独安装 | 已具备 |
 
@@ -281,4 +315,8 @@ document_chunks
 - [x] 项目骨架已生成（Spring Boot + Spring AI 启动类）
 - [x] 技术选型已确认
 - [x] 实施计划已成文
-- [ ] 阶段 1 任务待启动（等待用户准备 DashScope key 与 MySQL）
+- [x] 阶段 1 已完成（最小 RAG 闭环）
+- [x] 阶段 2 已完成（REST API 完整化 + Redis 向量库 + RAG 演示）
+- [x] 阶段 3 已完成（用户系统 + 安全 + 登录前端）
+- [x] 阶段 4 已完成（文档管理 + RAG 前端）
+- [x] 阶段 5 已完成（Swagger UI + README）

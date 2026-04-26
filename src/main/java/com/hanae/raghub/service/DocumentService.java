@@ -44,13 +44,13 @@ public class DocumentService {
         this.vectorStore = vectorStore;
     }
 
-    public List<Document> listDocuments() {
-        return documentRepository.findAll();
+    public List<Document> listDocuments(Long userId) {
+        return documentRepository.findByUserId(userId);
     }
 
     @Transactional
-    public void deleteDocument(Long id) {
-        Document doc = documentRepository.findById(id)
+    public void deleteDocument(Long id, Long userId) {
+        Document doc = documentRepository.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("文档不存在: " + id));
 
         List<String> vectorIds = chunkRepository.findVectorIdsByDocumentId(id);
@@ -66,8 +66,9 @@ public class DocumentService {
     }
 
     @Transactional
-    public Document uploadAndProcess(MultipartFile file) {
+    public Document uploadAndProcess(MultipartFile file, Long userId) {
         Document doc = new Document();
+        doc.setUserId(userId);
         doc.setFilename(file.getOriginalFilename());
         doc.setMimeType(file.getContentType());
         doc.setFileSize(file.getSize());
@@ -110,7 +111,8 @@ public class DocumentService {
                                 chunk.getText(),
                                 Map.of(
                                         "documentId", doc.getId(),
-                                        "chunkIndex", i
+                                        "chunkIndex", i,
+                                        "userId", userId
                                 )
                         );
                 vectorDocs.add(vectorDoc);

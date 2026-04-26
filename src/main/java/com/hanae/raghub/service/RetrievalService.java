@@ -20,15 +20,16 @@ public class RetrievalService {
         this.vectorStore = vectorStore;
     }
 
-    public List<Document> search(String query, int topK) {
+    public List<Document> search(String query, int topK, Long userId) {
         SearchRequest request = SearchRequest.builder()
                 .query(query)
                 .topK(topK)
+                .filterExpression("userId == " + userId)
                 .build();
 
         List<Document> results = vectorStore.similaritySearch(request);
 
-        log.info("检索 '{}', 返回 {} 条结果", query, results.size());
+        log.info("用户 {} 检索 '{}', 返回 {} 条结果", userId, query, results.size());
 
         return results;
     }

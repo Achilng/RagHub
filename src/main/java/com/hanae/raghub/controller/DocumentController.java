@@ -4,9 +4,10 @@ import com.hanae.raghub.common.Result;
 import com.hanae.raghub.dto.DocumentResponse;
 import com.hanae.raghub.dto.SearchRequest;
 import com.hanae.raghub.entity.Document;
+import com.hanae.raghub.entity.User;
 import com.hanae.raghub.service.DocumentService;
 import com.hanae.raghub.service.RetrievalService;
-import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -27,8 +28,8 @@ public class DocumentController {
     }
 
     @GetMapping("/documents")
-    public Result<List<DocumentResponse>> list() {
-        List<DocumentResponse> documents = documentService.listDocuments()
+    public Result<List<DocumentResponse>> list(@AuthenticationPrincipal User user) {
+        List<DocumentResponse> documents = documentService.listDocuments(user.getId())
                 .stream()
                 .map(DocumentResponse::from)
                 .toList();
@@ -36,23 +37,26 @@ public class DocumentController {
     }
 
     @PostMapping("/documents")
-    public Result<DocumentResponse> upload(@RequestParam("file") MultipartFile file) {
-        Document doc = documentService.uploadAndProcess(file);
+    public Result<DocumentResponse> upload(@AuthenticationPrincipal User user,
+                                           @RequestParam("file") MultipartFile file) {
+        Document doc = documentService.uploadAndProcess(file, user.getId());
         return Result.success(DocumentResponse.from(doc));
     }
 
     @DeleteMapping("/documents/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        documentService.deleteDocument(id);
-        return ResponseEntity.noContent().build();
+    public Result<Void> delete(@AuthenticationPrincipal User user,
+                               @PathVariable Long id) {
+        documentService.deleteDocument(id, user.getId());
+        return Result.success(null);
     }
 
     @PostMapping("/search")
-    public Result<List<Map<String, Object>>> search(@RequestBody SearchRequest body) {
+    public Result<List<Map<String, Object>>> search(@AuthenticationPrincipal User user,
+                                                    @RequestBody SearchRequest body) {
         String query = body.getQuery();
         int topK = body.getTopK();
 
-        List<org.springframework.ai.document.Document> results = retrievalService.search(query, topK);
+        List<org.springframework.ai.document.Document> results = retrievalService.search(query, topK, user.getId());
 
         List<Map<String, Object>> items = results.stream()
                 .map(doc -> Map.<String, Object>of(

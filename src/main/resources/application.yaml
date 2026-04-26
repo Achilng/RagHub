@@ -2,6 +2,10 @@ spring:
   profiles:
     active: redis
 
+  autoconfigure:
+    exclude:
+      - org.springframework.ai.vectorstore.redis.autoconfigure.RedisVectorStoreAutoConfiguration
+
   application:
     name: RagHub
 
@@ -41,14 +45,15 @@ spring:
     deepseek:
       api-key: ${DEEPSEEK_API_KEY}
 
-    vectorstore:
-      redis:
-        index: raghub-vectors
-        prefix: "raghub:"
-        initialize-schema: true
+    # Redis VectorStore 已在 RedisVectorStoreConfig 中手动配置
 
 server:
   port: 8080
+
+raghub:
+  jwt:
+    secret: ${RAGHUB_JWT_SECRET}
+    expiration: 86400000
 
 logging:
   level:
